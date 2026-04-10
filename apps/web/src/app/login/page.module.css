@@ -1,0 +1,95 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card {
+  width: min(440px, 100%);
+  border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--background) 92%, var(--foreground) 8%);
+  padding: 20px;
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  opacity: 0.75;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent);
+  background: color-mix(in srgb, var(--background) 96%, var(--foreground) 4%);
+  color: var(--foreground);
+}
+
+.input:focus {
+  outline: 2px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.hint {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.error {
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.button {
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 22%, transparent);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.footer {
+  margin-top: 14px;
+  font-size: 12px;
+  opacity: 0.65;
+  line-height: 1.4;
+}
