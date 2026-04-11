@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { login } from '../../lib/api';
-import { getToken, setToken } from '../../lib/auth';
+import { login, me } from '../../lib/api';
+import { getToken, setToken, clearToken } from '../../lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,7 +28,14 @@ export default function LoginPage() {
     try {
       const result = await login(email.trim(), password);
       setToken(result.token);
-      router.replace('/');
+      // Verify token works by calling /auth/me before redirecting
+      try {
+        await me();
+        router.replace('/');
+      } catch (err) {
+        clearToken();
+        setError('Không thể xác thực sau khi đăng nhập');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

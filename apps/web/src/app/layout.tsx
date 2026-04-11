@@ -22,7 +22,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const apiBaseUrl = process.env.API_BASE_URL ?? '';
+  const apiBaseUrl =
+    (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || 'http://localhost:4000').toString().trim();
 
   return (
     <html lang="vi" className={`${geistSans.variable} ${geistMono.variable}`}>

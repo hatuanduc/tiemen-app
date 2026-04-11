@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import prisma from '../services/db';
+import { userWithAuthArgs, type UserWithAuth } from '../db/prismaQueryArgs';
 import { signToken, verifyToken } from '../services/auth';
 
 export async function login(req: Request, res: Response) {
@@ -15,7 +16,22 @@ export async function login(req: Request, res: Response) {
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = signToken({ id: user.id, email: user.email, name: user.name ?? undefined });
-    const safeUser = { id: user.id, email: user.email, name: user.name };
+    const userWithRoles = await prisma.user.findUnique({
+      where: { id: user.id },
+      ...userWithAuthArgs,
+    });
+    const userRoleRows = userWithRoles?.roles ?? ([] as UserWithAuth['roles']);
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      roles: userRoleRows.map((item) => item.role.key),
+      permissions: Array.from(
+        new Set(
+          userRoleRows.flatMap((item) => item.role.permissions.map((rp) => rp.permission.key)),
+        ),
+      ),
+    };
     return res.json({ token, user: safeUser });
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -31,9 +47,23 @@ export async function me(req: Request, res: Response) {
 
   try {
     const payload = verifyToken(token) as { sub: string; email: string; name: string };
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      ...userWithAuthArgs,
+    });
     if (!user) return res.status(401).json({ message: 'Invalid token' });
-    return res.json({ user: { id: user.id, email: user.email, name: user.name } });
+    const permissions = Array.from(
+      new Set(user.roles.flatMap((item) => item.role.permissions.map((rp) => rp.permission.key))),
+    );
+    return res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        roles: user.roles.map((item) => item.role.key),
+        permissions,
+      },
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Auth/me error', err);
