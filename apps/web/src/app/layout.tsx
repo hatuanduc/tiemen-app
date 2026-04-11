@@ -28,7 +28,6 @@ export default function RootLayout({
     <html lang="vi" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: `window.__TIEMEN__ = { apiBaseUrl: ${JSON.stringify(apiBaseUrl)} };`,
           }}
