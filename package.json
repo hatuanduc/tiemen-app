@@ -1,14 +1,12 @@
 {
   "name": "tiemen",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
+  
   "scripts": {
-    "dev": "concurrently -k \"npm run dev -w @tiemen/api\" \"npm run dev -w @tiemen/web\"",
-    "build": "npm run build -w @tiemen/api && npm run build -w @tiemen/web",
+    "dev": "concurrently -k \"npm run dev -w @tiemen/api-nest\" \"npm run dev -w @tiemen/web\"",
+    "build": "npm run build -w @tiemen/api-nest && npm run build -w @tiemen/web",
     "lint": "npm run lint -w @tiemen/web",
-    "start": "npm run start -w @tiemen/api"
+    "start": "npm run start -w @tiemen/api-nest"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

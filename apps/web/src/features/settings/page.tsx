@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import SettingsLayout from '../../components/SettingsLayout';
 import UsersPage from './users/UsersPage';
 import RolesPage from './roles/RolesPage';
-import { Button } from '../../components/common';
+import BranchesPage from './branches/BranchesPage';
 
 export default function SettingsRoot() {
-  const [tab, setTab] = useState<'users' | 'roles'>('users');
+  const [tab, setTab] = useState<'users' | 'roles' | 'branches'>('users');
 
   return (
     <SettingsLayout>
@@ -19,9 +19,12 @@ export default function SettingsRoot() {
         <button onClick={() => setTab('roles')} style={{ padding: '8px 12px', border: 'none', borderBottom: tab === 'roles' ? '2px solid #4f46e5' : '2px solid transparent', background: 'transparent', cursor: 'pointer' }}>
           Quản lý vai trò
         </button>
+        <button onClick={() => setTab('branches')} style={{ padding: '8px 12px', border: 'none', borderBottom: tab === 'branches' ? '2px solid #4f46e5' : '2px solid transparent', background: 'transparent', cursor: 'pointer' }}>
+          Chi nhánh
+        </button>
       </div>
 
-      {tab === 'users' ? <UsersPage /> : <RolesPage />}
+      {tab === 'users' ? <UsersPage /> : tab === 'roles' ? <RolesPage /> : <BranchesPage />}
     </SettingsLayout>
   );
 }

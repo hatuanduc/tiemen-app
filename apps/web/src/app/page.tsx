@@ -5,14 +5,20 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createRole,
   createUser,
+  listBranches,
   listPermissions,
   listRoles,
   listUsers,
+  createBranch,
+  updateBranch,
+  deleteBranch,
   me,
+  type BranchItem,
   type PermissionItem,
   type RoleItem,
   type UserItem,
 } from '../lib/api';
+import UserBranchRolesPanel from '../features/settings/users/UserBranchRolesPanel';
 import { clearToken, getToken } from '../lib/auth';
 
 type User = { id: string; email: string; name: string | null; roles: string[]; permissions: string[] };
@@ -25,13 +31,20 @@ export default function HomePage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [permissions, setPermissions] = useState<PermissionItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'branches'>('users');
+  const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [newBranchCode, setNewBranchCode] = useState('');
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchAddress, setNewBranchAddress] = useState('');
+  const [editingBranch, setEditingBranch] = useState<BranchItem | null>(null);
+  const [branchError, setBranchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRoleIds, setNewUserRoleIds] = useState<string[]>([]);
-  const [newRoleKey, setNewRoleKey] = useState('');
+
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
   const [newRolePermissionIds, setNewRolePermissionIds] = useState<string[]>([]);
@@ -63,14 +76,16 @@ export default function HomePage() {
   }
 
   async function reloadManagementData(keyword = '') {
-    const [usersRes, rolesRes, permissionsRes] = await Promise.all([
+    const [usersRes, rolesRes, permissionsRes, branchesRes] = await Promise.all([
       canManageUsers ? listUsers(keyword) : Promise.resolve({ items: [] }),
       canManageRoles ? listRoles() : Promise.resolve({ items: [] }),
       canManageRoles ? listPermissions() : Promise.resolve({ items: [] }),
+      listBranches(),
     ]);
     setUsers(usersRes.items);
     setRoles(rolesRes.items);
     setPermissions(permissionsRes.items);
+    setBranches(branchesRes.items ?? []);
   }
 
   function toggleInArray(current: string[], value: string) {
@@ -107,12 +122,10 @@ export default function HomePage() {
     setSaving(true);
     try {
       await createRole({
-        key: newRoleKey.trim().toLowerCase(),
         name: newRoleName.trim(),
         description: newRoleDescription.trim(),
         permissionIds: newRolePermissionIds,
       });
-      setNewRoleKey('');
       setNewRoleName('');
       setNewRoleDescription('');
       setNewRolePermissionIds([]);
@@ -227,6 +240,13 @@ export default function HomePage() {
             >
               Quản lý vai trò
             </button>
+            <button
+              type="button"
+              className={activeTab === 'branches' ? 'active' : ''}
+              onClick={() => setActiveTab('branches')}
+            >
+              Chi nhánh
+            </button>
           </div>
 
           {activeTab === 'users' ? (
@@ -258,16 +278,36 @@ export default function HomePage() {
                         <th>Email</th>
                         <th>Vai trò</th>
                         <th>Trạng thái</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((item) => (
-                        <tr key={item.id}>
-                          <td>{item.name ?? '-'}</td>
-                          <td>{item.email}</td>
-                          <td>{item.roles.map((role) => role.name).join(', ') || 'Chưa gán'}</td>
-                          <td>{item.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</td>
-                        </tr>
+                        <>
+                          <tr key={item.id}>
+                            <td>{item.name ?? '-'}</td>
+                            <td>{item.email}</td>
+                            <td>{item.roles.map((role) => role.name).join(', ') || 'Chưa gán'}</td>
+                            <td>{item.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="tiemen-buttonSecondary"
+                                style={{ fontSize: 12, padding: '2px 8px' }}
+                                onClick={() => setExpandedUserId(expandedUserId === item.id ? null : item.id)}
+                              >
+                                {expandedUserId === item.id ? 'Ẩn ▲' : 'Chi nhánh ▼'}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedUserId === item.id && (
+                            <tr key={`${item.id}-branches`}>
+                              <td colSpan={5} style={{ background: '#fafafa', padding: '0 16px 16px' }}>
+                                <UserBranchRolesPanel userId={item.id} />
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ))}
                     </tbody>
                   </table>
@@ -326,6 +366,172 @@ export default function HomePage() {
                 )}
               </article>
             </>
+          ) : activeTab === 'branches' ? (
+            <>
+              <article className="tiemen-panel wide">
+                <h3>Danh sách chi nhánh</h3>
+                <table className="tiemen-table">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Tên</th>
+                      <th>Địa chỉ</th>
+                      <th>Trạng thái</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {branches.map((b) =>
+                      editingBranch?.id === b.id ? (
+                        <tr key={b.id}>
+                          <td style={{ color: '#888' }}>{b.code}</td>
+                          <td>
+                            <input
+                              className="tiemen-input"
+                              value={editingBranch.name}
+                              onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="tiemen-input"
+                              value={editingBranch.address ?? ''}
+                              onChange={(e) => setEditingBranch({ ...editingBranch, address: e.target.value })}
+                            />
+                          </td>
+                          <td>
+                            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={editingBranch.isActive}
+                                onChange={(e) => setEditingBranch({ ...editingBranch, isActive: e.target.checked })}
+                              />
+                              Hoạt động
+                            </label>
+                          </td>
+                          <td style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="tiemen-buttonSecondary"
+                              style={{ fontSize: 12 }}
+                              onClick={async () => {
+                                await updateBranch(editingBranch.id, {
+                                  name: editingBranch.name,
+                                  address: editingBranch.address ?? undefined,
+                                  isActive: editingBranch.isActive,
+                                });
+                                setEditingBranch(null);
+                                await reloadManagementData();
+                              }}
+                            >
+                              Lưu
+                            </button>
+                            <button
+                              type="button"
+                              className="tiemen-buttonSecondary"
+                              style={{ fontSize: 12 }}
+                              onClick={() => setEditingBranch(null)}
+                            >
+                              Hủy
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={b.id}>
+                          <td>{b.code}</td>
+                          <td>{b.name}</td>
+                          <td>{b.address || '-'}</td>
+                          <td>{b.isActive ? 'Đang hoạt động' : 'Đã đóng'}</td>
+                          <td style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="tiemen-buttonSecondary"
+                              style={{ fontSize: 12 }}
+                              onClick={() => setEditingBranch(b)}
+                            >tiemen
+                              Sửa
+                            </button>
+                            <button
+                              type="button"
+                              className="tiemen-buttonSecondary"
+                              style={{ fontSize: 12, color: '#c00' }}
+                              onClick={async () => {
+                                if (!confirm(`Xóa chi nhánh "${b.name}"?`)) return;
+                                await deleteBranch(b.id);
+                                await reloadManagementData();
+                              }}
+                            >
+                              Xóa
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </article>
+
+              <article className="tiemen-panel wide">
+                <h3>Thêm chi nhánh mới</h3>
+                <form
+                  className="tiemen-form"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setBranchError(null);
+                    setSaving(true);
+                    try {
+                      await createBranch({
+                        code: newBranchCode.trim().toUpperCase(),
+                        name: newBranchName.trim(),
+                        address: newBranchAddress.trim() || undefined,
+                      });
+                      setNewBranchCode('');
+                      setNewBranchName('');
+                      setNewBranchAddress('');
+                      await reloadManagementData();
+                    } catch (err) {
+                      const msg = err instanceof Error ? err.message : '';
+                      setBranchError(
+                        msg.includes('BRANCH_CODE_EXISTS')
+                          ? `Mã chi nhánh "${newBranchCode.trim().toUpperCase()}" đã tồn tại.`
+                          : 'Tạo chi nhánh thất bại. Vui lòng thử lại.',
+                      );
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  <div className="tiemen-gridForm">
+                    <input
+                      className="tiemen-input"
+                      value={newBranchCode}
+                      onChange={(e) => { setNewBranchCode(e.target.value); setBranchError(null); }}
+                      placeholder="Mã chi nhánh (vd: HN01)"
+                      required
+                    />
+                    <input
+                      className="tiemen-input"
+                      value={newBranchName}
+                      onChange={(e) => setNewBranchName(e.target.value)}
+                      placeholder="Tên chi nhánh"
+                      required
+                    />
+                    <input
+                      className="tiemen-input"
+                      value={newBranchAddress}
+                      onChange={(e) => setNewBranchAddress(e.target.value)}
+                      placeholder="Địa chỉ (tùy chọn)"
+                    />
+                  </div>
+                  {branchError && (
+                    <p style={{ color: '#c00', fontSize: 13, margin: '4px 0' }}>{branchError}</p>
+                  )}
+                  <button className="tiemen-buttonSecondary" type="submit" disabled={saving}>
+                    {saving ? 'Đang lưu...' : '+ Thêm chi nhánh'}
+                  </button>
+                </form>
+              </article>
+            </>
           ) : (
             <>
               <article className="tiemen-panel wide">
@@ -363,13 +569,6 @@ export default function HomePage() {
                 ) : (
                   <form className="tiemen-form" onSubmit={onCreateRole}>
                     <div className="tiemen-gridForm">
-                      <input
-                        className="tiemen-input"
-                        value={newRoleKey}
-                        onChange={(e) => setNewRoleKey(e.target.value)}
-                        placeholder="role key (vd: cashier)"
-                        required
-                      />
                       <input
                         className="tiemen-input"
                         value={newRoleName}

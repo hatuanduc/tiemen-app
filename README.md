@@ -21,8 +21,8 @@ Mặc định:
 
 ## Login demo
 
-- Email: `admin@tiemen.local`
-- Password: `admin123` (có thể đổi bằng `DEMO_PASSWORD` trong `apps/api/.env`)
+- Email: `admin@tiemen.vn`
+- Password: `tiemen` (có thể đổi bằng `DEMO_PASSWORD` trong `apps/api/.env`)
 
 ## Deploy GCP
 

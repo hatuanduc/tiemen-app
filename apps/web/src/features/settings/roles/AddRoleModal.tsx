@@ -6,12 +6,12 @@ import Card from '../../../components/common/Card';
 import FormSection from '../../../components/common/FormSection';
 
 export default function AddRoleModal({ onClose }: { onClose?: () => void }) {
-  const [key, setKey] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<any[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     listPermissions().then((r) => setPermissions(r.items ?? r ?? []));
@@ -23,13 +23,18 @@ export default function AddRoleModal({ onClose }: { onClose?: () => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setSaving(true);
     try {
-      await createRole({ key, name, description, permissionIds: selected });
+      await createRole({ name, description, permissionIds: selected });
       onClose?.();
     } catch (err) {
-      console.error('create role', err);
-      alert('Tạo vai trò thất bại');
+      const msg = err instanceof Error ? err.message : 'Tạo vai trò thất bại';
+      if (msg.includes('ROLE_KEY_EXISTS')) {
+        setError('Key vai trò đã tồn tại, vui lòng chọn key khác.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -70,6 +75,7 @@ export default function AddRoleModal({ onClose }: { onClose?: () => void }) {
         </Card>
 
         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          {error && <span style={{ color: 'red', fontSize: 13, alignSelf: 'center' }}>{error}</span>}
           <Button variant="secondary" type="button" onClick={onClose}>Bỏ qua</Button>
           <Button type="submit" disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu'}</Button>
         </div>

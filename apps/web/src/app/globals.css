@@ -8,6 +8,29 @@
   --tiemen-surface-2: color-mix(in srgb, var(--background) 86%, var(--foreground));
   --tiemen-muted: color-mix(in srgb, var(--foreground) 68%, var(--background));
   --tiemen-focus: color-mix(in srgb, var(--foreground) 35%, transparent);
+
+  /* ── Typography scale ── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   17px;
+  --text-lg:   20px;
+  --text-xl:   24px;
+  --text-2xl:  30px;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+  --weight-bold:    700;
+
+  /* ── Color tokens ── */
+  --color-ink:    #1a1f36;
+  --color-muted:  #697386;
+  --color-subtle: #a3acb9;
+  --color-border: #c4cdd6;
+  --color-accent: #635bff;
+  --color-accent-hover: #4f46e5;
 }
 
 @media (prefers-color-scheme: dark) {

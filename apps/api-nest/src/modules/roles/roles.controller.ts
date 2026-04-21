@@ -25,8 +25,8 @@ export class RolesController {
 
   @Post('roles')
   async postRole(@Body() body: any) {
-    const { key, name, description, permissionIds } = body;
-    const role = await this.roles.createRole({ key, name, description, permissionIds: permissionIds ?? [] });
+    const { name, description, permissionIds } = body;
+    const role = await this.roles.createRole({ name, description, permissionIds: permissionIds ?? [] });
     return {
       item: {
         id: role.id,

@@ -10,14 +10,39 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  roles     UserRole[]
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String?
+  password        String
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  roles           UserRole[]
+  branchRoles     UserBranchRole[]
+}
+
+model Branch {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  name        String
+  address     String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  userRoles   UserBranchRole[]
+}
+
+model UserBranchRole {
+  id         String   @id @default(uuid())
+  userId     String
+  branchId   String
+  roleId     String
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, branchId, roleId])
 }
 
 model Role {
@@ -29,6 +54,7 @@ model Role {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   users       UserRole[]
+  branchUsers UserBranchRole[]
   permissions RolePermission[]
 }
 

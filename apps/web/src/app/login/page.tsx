@@ -4,13 +4,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { login, me } from '../../lib/api';
 import { getToken, setToken, clearToken } from '../../lib/auth';
+import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -18,75 +20,113 @@ export default function LoginPage() {
   }, [router]);
 
   const canSubmit = useMemo(() => {
-    return email.trim().length > 0 && password.trim().length > 0 && !loading;
-  }, [email, password, loading]);
+    return username.trim().length > 0 && password.trim().length > 0 && !loading;
+  }, [username, password, loading]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const result = await login(email.trim(), password);
+      const result = await login(username.trim(), password);
       setToken(result.token);
-      // Verify token works by calling /auth/me before redirecting
       try {
         await me();
         router.replace('/');
-      } catch (err) {
+      } catch {
         clearToken();
-        setError('Không thể xác thực sau khi đăng nhập');
+        setError('Không thể xác thực sau khi đăng nhập.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError('Tên đăng nhập hoặc mật khẩu không đúng.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="tiemen-center">
-      <section className="tiemen-card" aria-label="Login">
-        <h1 className="tiemen-title">Đăng nhập</h1>
-        <p className="tiemen-subtitle">tiemen</p>
+    <main className={styles.page}>
+      {/* Background ribbons */}
+      <div className={styles.bg}>
+        <div className={styles.r1} />
+        <div className={styles.r2} />
+        <div className={styles.r3} />
+        <div className={styles.r4} />
+      </div>
 
-        <form className="tiemen-form" onSubmit={onSubmit}>
-          <label className="tiemen-field">
-            <span className="tiemen-label">Email</span>
-            <input
-              className="tiemen-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              placeholder="admin@tiemen.local"
-              required
-            />
-          </label>
+      {/* Page-level header — brand outside card */}
+      <header className={styles.header}>
+        <span className={styles.brand}>tiemen</span>
+      </header>
 
-          <label className="tiemen-field">
-            <span className="tiemen-label">Mật khẩu</span>
-            <input
-              className="tiemen-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              required
-            />
-          </label>
+      {/* Centered card */}
+      <div className={styles.cardWrap}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Đăng nhập</h1>
+          <p className={styles.subtitle}>Chào mừng trở lại. Vui lòng nhập thông tin.</p>
 
-          {error ? (
-            <div className="tiemen-error" role="alert">
-              {error}
+          <form className={styles.form} onSubmit={onSubmit}>
+            <label className={styles.field}>
+              <span className={styles.label}>Tên đăng nhập</span>
+              <input
+                className={styles.input}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                type="text"
+                autoComplete="username"
+                autoFocus
+                required
+              />
+            </label>
+
+            <div className={styles.field}>
+              <span className={styles.label}>Mật khẩu</span>
+              <div className={styles.passwordWrap}>
+                <input
+                  className={styles.input}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
-          ) : null}
 
-          <button className="tiemen-button" type="submit" disabled={!canSubmit}>
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
-        </form>
-      </section>
+            {error && (
+              <div className={styles.error} role="alert">
+                {error}
+              </div>
+            )}
+
+            <button className={styles.button} type="submit" disabled={!canSubmit}>
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </button>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }
+

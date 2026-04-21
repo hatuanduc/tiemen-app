@@ -3,11 +3,17 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+    },
+  },
+});
 
 async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@tiemen.local';
-  const password = process.env.DEMO_PASSWORD ?? 'admin123';
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@tiemen.vn';
+  const password = process.env.DEMO_PASSWORD ?? 'tiemen';
   const hashed = bcrypt.hashSync(password, 10);
   const defaultPermissions = [
     { key: 'dashboard:view', module: 'dashboard', action: 'view', label: 'Xem tổng quan' },
